@@ -8,3 +8,4 @@ UserAdmin.fieldsets += ('Custom fields', {'fields': ('nickname', 'profile_pic','
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Review)
+

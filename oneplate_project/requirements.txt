@@ -7,3 +7,5 @@ python-decouple==3.8
 django-allauth == 0.57.0
 Pillow == 10.0.1
 drf-extra-fields == 3.7.0
+
+

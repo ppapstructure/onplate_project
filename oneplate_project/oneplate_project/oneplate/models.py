@@ -3,10 +3,12 @@ from django.contrib.auth.models import AbstractUser
 from oneplate.validators import validate_no_special_characters
 
 # Create your models here.
+<<<<<<< HEAD
 '''
 user 모델에 profile_pic 요소를 추가해서 프로필사진 업로드 유무확인
 user - comment -review 관계 구현하고 해당페이지 우선 접근제어 없이 crud 구현하기
 '''
+
 
 class User(AbstractUser):
 
@@ -18,7 +20,6 @@ class User(AbstractUser):
         error_messages={'unique': '이미 사용중인 닉네임입니다.'},
     )
     profile_pic = models.ImageField(default='default_profile_pic.jpg', upload_to='profile_pics')
-
     intro = models.CharField(max_length=60, blank=True)
 
     class Meta:
@@ -94,3 +95,9 @@ class Comment(models.Model):
         return self.content[:30]
 '''
 
+=======
+        db_table = 'app_user'
+
+    # def __str__(self):
+    #     return self.email
+>>>>>>> 37df8f4 (main)
