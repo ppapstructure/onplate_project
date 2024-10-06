@@ -38,16 +38,37 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+
     # django-allauth
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    
+    'dj_rest_auth.registration',
+
     'rest_framework',
+    # 'rest_framework.authtoken',
+    'dj_rest_auth',
+    'drf_yasg',
     'oneplate',
 ]
 # django-allauth에서 필수로 사용하는 Site ID 설정
 SITE_ID = 1
+
+REST_AUTH = {
+    'USE_JWT': False,  # JWT 사용을 비활성화 (토큰 기반 인증 사용 안함)
+    'TOKEN_MODEL': None,  # 토큰 기능을 비활성화하려면 이 설정을 추가
+    'SESSION_LOGIN': True,
+    'USER_DETAILS_SERIALIZER': 'oneplate.serializers.UserSerializer',
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    )
+}
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Django 기본 인증 백엔드
@@ -62,6 +83,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',  # CSRF 미들웨어 포함
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'oneplate_project.urls'
@@ -135,6 +158,18 @@ USE_TZ = True
 # Auth settings
 AUTH_USER_MODEL = 'oneplate.User'
 
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # 이메일 인증 필수
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+'''
+이 두가지 설정이 이메일 인증 후 리다이렉션에 힌트가 될듯
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/?verification=1'
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = '/?verification=1'
+'''
 '''
 이후 로그인 페이지 작성시 참고
 # 이메일 인증 여부
@@ -151,7 +186,7 @@ ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
 ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
 ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 300  # 로그인 시도 제한 시간 (초)
 '''
-
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
@@ -161,4 +196,18 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': True,  # 세션 기반 인증 사용 여부
+    'SECURITY_DEFINITIONS': {
+        'csrfToken': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'X-CSRFToken'
+        }
+    },
+    # 'LOGIN_URL': 'account_login',  # 로그인 URL 네임스페이스
+    # 'LOGOUT_URL': 'account_logout',  # 로그아웃 URL 네임스페이스
+    # 기타 Swagger 설정...
+}
 
