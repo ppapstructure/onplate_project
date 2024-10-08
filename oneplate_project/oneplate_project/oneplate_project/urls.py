@@ -47,8 +47,8 @@ urlpatterns = [
     # path('', include('allauth.urls')),
 
     # dj_rest_auth 기본 설정
-    path('', include('dj_rest_auth.urls')),
-    path('signup/', include('dj_rest_auth.registration.urls')),  # 회원가입 엔드포인트
+    path('auth/', include('dj_rest_auth.urls')),
+    path('auth/signup/', include('dj_rest_auth.registration.urls')),  # 회원가입 엔드포인트
 ]
 
 # swggerui & redoc

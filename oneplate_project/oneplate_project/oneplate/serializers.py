@@ -14,5 +14,3 @@ class UserSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         print("Custom UserSerializer is being used!")  # 디버그 메시지
         return super().to_representation(instance)
-
-

@@ -210,4 +210,3 @@ SWAGGER_SETTINGS = {
     # 'LOGOUT_URL': 'account_logout',  # 로그아웃 URL 네임스페이스
     # 기타 Swagger 설정...
 }
-
