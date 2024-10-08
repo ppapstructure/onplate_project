@@ -37,8 +37,13 @@ schema_view = get_schema_view(
    permission_classes=(permissions.AllowAny,),
 )
 
+# Django FAQ에서 권유해준 방식
+from dj_rest_auth.views import PasswordResetConfirmView
 
 urlpatterns = [
+    re_path(r'^password/reset/confirm/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,32})/$',
+            PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+
     # admin
     path('admin/', admin.site.urls),
     # oneplage
