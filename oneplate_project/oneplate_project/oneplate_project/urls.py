@@ -24,10 +24,21 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from dj_rest_auth.views import LogoutView
 
+from django.conf import settings
+from django.conf.urls.static import static
+from dj_rest_auth.views import UserDetailsView
+from drf_yasg.utils import swagger_auto_schema
+
+# UserDetailsView의 특정 메소드를 숨기는 데코레이터 적용
+hidden_methods = swagger_auto_schema(auto_schema=None)
+# UserDetailsView.get = hidden_methods(UserDetailsView.get)
+UserDetailsView.put = hidden_methods(UserDetailsView.put)
+UserDetailsView.patch = hidden_methods(UserDetailsView.patch)
+
 schema_view = get_schema_view(
    openapi.Info(
       title="API Documentation",
-      default_version='v1',
+      default_version='v1.1',
       description="API description",
       terms_of_service="https://www.google.com/policies/terms/",
       contact=openapi.Contact(email="skskfl5786@gmail.com"),
@@ -43,7 +54,6 @@ from dj_rest_auth.views import PasswordResetConfirmView
 urlpatterns = [
     re_path(r'^password/reset/confirm/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,32})/$',
             PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-
     # admin
     path('admin/', admin.site.urls),
     # oneplage
@@ -55,6 +65,8 @@ urlpatterns = [
     path('auth/', include('dj_rest_auth.urls')),
     path('auth/signup/', include('dj_rest_auth.registration.urls')),  # 회원가입 엔드포인트
 ]
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # swggerui & redoc
 if settings.DEBUG:

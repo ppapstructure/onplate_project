@@ -1,12 +1,44 @@
 from django.shortcuts import render
-
 # Create your views here.
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.generics import ListCreateAPIView,UpdateAPIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
+from oneplate.models import User,Review
+from oneplate.serializers import UserSerializer, ReviewSerializer
+from rest_framework.pagination import PageNumberPagination
+
+class ReviewPageNumberPagination(PageNumberPagination):
+    page_size = 8
 
 class IndexView(APIView):
     def get(self, request):
         return Response({"message" : "This is the index page"})
+
+
+# Review 작성
+class ReviewList(ListCreateAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    pagination_class = ReviewPageNumberPagination
+    parser_classes = (MultiPartParser, FormParser)
+
+    def perform_create(self, serializer):
+        # 리뷰 생성 시 author를 현재 로그인한 사용자로 설정
+        serializer.save(author=self.request.user)
+
+
+class UserProfileUpdateView(UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)  # 멀티파트 폼 데이터 파서 추가
+    http_method_names = ['put']  # PATCH 메소드를 비활성화
+    def get_object(self):
+        return self.request.user
+
+
 
 
 # from allauth.account.views import SignupView
