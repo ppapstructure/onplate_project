@@ -41,6 +41,7 @@ dt_updated
 '''
 
 class Review(models.Model):
+    review_id = models.AutoField(primary_key=True)  # review_id를 기본 키로 설정
     title = models.CharField(max_length=30)
 
     cook_name = models.CharField(max_length=20)

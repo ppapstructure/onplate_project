@@ -19,9 +19,11 @@ class UserSerializer(serializers.ModelSerializer):
 # Review
 class ReviewSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
+    review_id = serializers.IntegerField(read_only=True)
     class Meta:
         model = Review
         fields = [
+            'review_id',
             'title',
             'author',
             'cook_name',
