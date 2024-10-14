@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'dj_rest_auth',
     'drf_yasg',
     'oneplate',
+
 ]
 # django-allauth에서 필수로 사용하는 Site ID 설정
 SITE_ID = 1
@@ -73,6 +74,7 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
     ],
+    'UNICODE_JSON': True,  # 이 줄을 추가
 }
 
 AUTHENTICATION_BACKENDS = [
@@ -126,7 +128,12 @@ DATABASES = {
         'PASSWORD': config('DB_PASSWORD'),
         'HOST': 'localhost',
         'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'use_unicode': True,
+        },
     }
+
 }
 
 
@@ -154,10 +161,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ko'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Seoul'  # UTC 대신 한국 시간대로 변경
 
 USE_I18N = True
-
+USE_L10N = True
 USE_TZ = True
 
 # Auth settings
@@ -198,14 +205,14 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 STATIC_URL = 'static/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
 MEDIA_URL = '/uploads/'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+FILE_CHARSET = 'utf-8'
+DEFAULT_CHARSET = 'utf-8'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+from drf_yasg import openapi
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': True,  # 세션 기반 인증 사용 여부
     'SECURITY_DEFINITIONS': {
@@ -215,6 +222,15 @@ SWAGGER_SETTINGS = {
             'name': 'X-CSRFToken'
         }
     },
+    'DEFAULT_INFO': openapi.Info(
+        title="API Documentation",
+        default_version='v1.1',
+        description="API description",
+        terms_of_service="https://www.google.com/policies/terms/",
+        contact=openapi.Contact(email="skskfl5786@gmail.com"),
+        license=openapi.License(name="BSD License"),
+    ),
+    'CHARSET': 'utf-8',
     # 'LOGIN_URL': 'account_login',  # 로그인 URL 네임스페이스
     # 'LOGOUT_URL': 'account_logout',  # 로그아웃 URL 네임스페이스
     # 기타 Swagger 설정...

@@ -4,12 +4,18 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.generics import ListCreateAPIView,RetrieveAPIView,UpdateAPIView,DestroyAPIView
+from rest_framework.generics import (
+    ListCreateAPIView,
+    ListAPIView,
+    CreateAPIView,
+    RetrieveAPIView,
+    UpdateAPIView,
+    DestroyAPIView)
 from rest_framework.permissions import IsAuthenticated,IsAuthenticatedOrReadOnly
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
-from oneplate.models import User,Review
-from oneplate.serializers import UserSerializer, ReviewSerializer
+from oneplate.models import User,Review,Comment
+from oneplate.serializers import UserSerializer, ReviewSerializer, CommentSerializer
 from rest_framework.pagination import PageNumberPagination
 
 class ReviewPageNumberPagination(PageNumberPagination):
@@ -19,16 +25,20 @@ class IndexView(APIView):
     def get(self, request):
         return Response({"message" : "This is the index page"})
 
-
 '''
 Review
 '''
-class ReviewList(ListCreateAPIView):
+
+class ReviewListView(ListAPIView):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     pagination_class = ReviewPageNumberPagination
-    parser_classes = (MultiPartParser, FormParser)
 
+class ReviewCreateView(CreateAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    parser_classes = (MultiPartParser, FormParser)
+    permission_classes = [IsAuthenticated]
     def perform_create(self, serializer):
         # 리뷰 생성 시 author를 현재 로그인한 사용자로 설정
         serializer.save(author=self.request.user)
@@ -62,6 +72,45 @@ class ReviewDeleteView(DestroyAPIView):
             raise PermissionDenied("You are not the author of this review.")
         instance.delete()
 
+'''
+Comment
+'''
+class CommentCreateView(CreateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated] # 댓글 생성은 로그인한 사용자만 가능
+
+    def perform_create(self, serializer):
+        # 리뷰 ID를 URL에서 가져와서 해당 리뷰에 댓글을 달도록 설정
+        review_id = self.kwargs.get('review_id')
+        review = Review.objects.get(review_id=review_id)
+
+        # 댓글 작성자와 연결된 리뷰를 설정하고 저장
+        serializer.save(author=self.request.user,review=review)
+
+class CommentUpdateView(UpdateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'comment_id'
+    http_method_names = ['put']
+
+    def perform_update(self, serializer):
+        # 현재 로그인한 사용자가 댓글의 작성자인지 확인
+        if self.request.user != serializer.instance.author:
+            raise PermissionDenied("You are not the author of this review.")
+        serializer.save()
+
+class CommentDeleteView(DestroyAPIView):
+    queryset = Comment.objects.all()
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'comment_id'
+
+    def perform_destroy(self, instance):
+        # 현재 로그인한 사용자가 댓글의 작성자인지 확인
+        if self.request.user != instance.author:
+            raise PermissionDenied("You are not the author of this review.")
+        instance.delete()
 
 '''
 Profile
@@ -131,22 +180,6 @@ class UserProfileUpdateView(UpdateAPIView):
         return Response({'detail': 'Profile updated successfully', 'success_url': success_url}, status=200)
     def get_object(self):
         return self.request.user
-
-
-
-
-# from allauth.account.views import SignupView
-# from rest_framework.response import Response
-# from rest_framework import status
-# from allauth.account.forms import SignupForm
-#
-# class CustomSignupView(SignupView):
-#     def post(self, request, *args, **kwargs):
-#         form = SignupForm(request.POST)
-#         if form.is_valid():
-#             user = form.save(request)
-#             return Response({"detail": "회원가입이 성공적으로 완료되었습니다."}, status=status.HTTP_201_CREATED)
-#         return Response({"errors": form.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 '''
 우선 구현해볼 로직
