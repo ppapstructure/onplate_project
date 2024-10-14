@@ -36,14 +36,7 @@ UserDetailsView.put = hidden_methods(UserDetailsView.put)
 UserDetailsView.patch = hidden_methods(UserDetailsView.patch)
 
 schema_view = get_schema_view(
-   openapi.Info(
-      title="API Documentation",
-      default_version='v1.1',
-      description="API description",
-      terms_of_service="https://www.google.com/policies/terms/",
-      contact=openapi.Contact(email="skskfl5786@gmail.com"),
-      license=openapi.License(name="BSD License"),
-   ),
+   settings.SWAGGER_SETTINGS['DEFAULT_INFO'],
    public=True,
    permission_classes=(permissions.AllowAny,),
 )

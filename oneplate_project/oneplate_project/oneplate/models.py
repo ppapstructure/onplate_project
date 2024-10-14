@@ -3,10 +3,6 @@ from django.contrib.auth.models import AbstractUser
 from oneplate.validators import validate_no_special_characters
 
 # Create your models here.
-'''
-user 모델에 profile_pic 요소를 추가해서 프로필사진 업로드 유무확인
-user - comment -review 관계 구현하고 해당페이지 우선 접근제어 없이 crud 구현하기
-'''
 
 class User(AbstractUser):
 
@@ -22,24 +18,12 @@ class User(AbstractUser):
     intro = models.CharField(max_length=60, blank=True)
 
     class Meta:
-        db_table = 'user'
+        db_table = 'comment'
 
     def __str__(self):
         return self.email
 
 # Review
-'''
-title
-cook_name
-cook_ingredient
-rating
-image1
-image2
-content
-dt_created
-dt_updated
-'''
-
 class Review(models.Model):
     review_id = models.AutoField(primary_key=True)  # review_id를 기본 키로 설정
     title = models.CharField(max_length=30)
@@ -75,11 +59,10 @@ class Review(models.Model):
         db_table = 'review'
         ordering = ['-dt_created']
 
-
-'''
-auto_now_add?
 # Comment
 class Comment(models.Model):
+    comment_id = models.AutoField(primary_key=True)
+
     content = models.TextField(max_length=500, blank=False)
 
     dt_created = models.DateTimeField(auto_now_add=True)
@@ -92,5 +75,8 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.content[:30]
-'''
+        
+    class Meta:
+        db_table = 'user'
+
 

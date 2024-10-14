@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from oneplate.models import User, Review
+from oneplate.models import User, Review, Comment
 
 class UserSerializer(serializers.ModelSerializer):
     profile_pic = serializers.ImageField(required=False, allow_empty_file=True, use_url=True)
@@ -15,11 +15,22 @@ class UserSerializer(serializers.ModelSerializer):
         print("Custom UserSerializer is being used!")  # 디버그 메시지
         return super().to_representation(instance)
 
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.StringRelatedField(read_only=True)  # 작성자 정보
+    review = serializers.PrimaryKeyRelatedField(read_only=True)  # 리뷰 정보
+    class Meta:
+        model = Comment
+        fields = ['comment_id', 'content', 'dt_created', 'author', 'review']
 
 # Review
 class ReviewSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
+    # 아래껄로 바꾸는게 맞지 싶다.
+    # author = serializers.StringRelatedField(read_only=True)
     review_id = serializers.IntegerField(read_only=True)
+    # related_name을 통해서 comment_set 이름변경 가능
+    comment = CommentSerializer(many=True, read_only=True, source='comment_set') # 연결된 댓글들
+
     class Meta:
         model = Review
         fields = [
@@ -32,4 +43,5 @@ class ReviewSerializer(serializers.ModelSerializer):
             'image1',
             'image2',
             'content',
+            'comment',
         ]
