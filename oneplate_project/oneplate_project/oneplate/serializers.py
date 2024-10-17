@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from oneplate.models import User, Review, Comment
+from oneplate.models import User, Review, Comment, Like
 
 class UserSerializer(serializers.ModelSerializer):
     profile_pic = serializers.ImageField(required=False, allow_empty_file=True, use_url=True)
@@ -23,6 +23,13 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = ['comment_id', 'content', 'dt_created', 'author', 'review']
 
 # Review
+class ReviewListSerializer(serializers.ModelSerializer):
+    author = serializers.StringRelatedField()  # 간단한 정보만 포함 (닉네임 정도)
+
+    class Meta:
+        model = Review
+        fields = ['review_id', 'title', 'author', 'cook_ingredient','image1','dt_created','rating']
+
 class ReviewSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     # 아래껄로 바꾸는게 맞지 싶다.
@@ -45,3 +52,25 @@ class ReviewSerializer(serializers.ModelSerializer):
             'content',
             'comment',
         ]
+
+
+class LikeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Like
+        fields = ['id', 'user', 'content_type_id', 'object_id', 'dt_created']
+
+
+
+# class LikeSerializer(serializers.ModelSerializer):
+#     content_type = serializers.CharField(write_only=True)  # 'review' or 'comment'
+#     object_id = serializers.IntegerField(write_only=True)
+#
+#     class Meta:
+#         model = Like
+#         fields = ['id', 'user', 'content_type_id', 'object_id']
+#         read_only_fields = ['id', 'user']
+#
+#     def validate_content_type(self, value):
+#         if value not in ['review', 'comment']:
+#             raise serializers.ValidationError("content_type must be either 'review' or 'comment'")
+#         return value

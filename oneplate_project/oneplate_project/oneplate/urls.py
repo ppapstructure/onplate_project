@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path,include
+from rest_framework.routers import DefaultRouter
 from oneplate.views import (
     IndexView,
     ReviewListView,
@@ -12,7 +13,12 @@ from oneplate.views import (
     ProfileView,
     UserProfileSetView,
     UserProfileUpdateView,
+    LikeViewSet,
+    UserLikedReviewsView,
 )
+
+router = DefaultRouter()
+router.register(r'likes', LikeViewSet, basename='like')
 
 urlpatterns = [
     path('', IndexView.as_view(), name="index"),
@@ -23,6 +29,7 @@ urlpatterns = [
     path('reviews/<int:review_id>/', ReviewDetailView.as_view(), name='review-detail'),
     path('reviews/<int:review_id>/edit/', ReviewUpdateView.as_view(), name='review-update'),
     path('reviews/<int:review_id>/delete/', ReviewDeleteView.as_view(), name='review-delete'),
+    path('reviews/user/liked-reviews/', UserLikedReviewsView.as_view(), name='user-liked-reviews'),
 
     # Comment
     path(
@@ -45,4 +52,7 @@ urlpatterns = [
     path('users/<int:user_id>/', ProfileView.as_view(), name='profile'),
     path('set-profile/', UserProfileSetView.as_view(), name='profile-set'),
     path('edit-profile/', UserProfileUpdateView.as_view(), name='profile-update'),
+
+    # like
+    path('', include(router.urls)),
 ]

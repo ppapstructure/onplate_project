@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from oneplate.validators import validate_no_special_characters
-
 # Create your models here.
 
 class User(AbstractUser):
@@ -52,6 +53,8 @@ class Review(models.Model):
 
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
 
+    likes = GenericRelation('Like', related_query_name='review')
+
     def __str__(self):
         return self.title
 
@@ -73,10 +76,33 @@ class Comment(models.Model):
 
     review = models.ForeignKey(Review, on_delete=models.CASCADE)
 
+    likes = GenericRelation('Like', related_query_name='comment')
+
     def __str__(self):
         return self.content[:30]
         
     class Meta:
         db_table = 'user'
 
+class Like(models.Model):
+    dt_created = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes')
+    content_type_id = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    like_object = GenericForeignKey('content_type_id', 'object_id')
 
+    def __str__(self):
+        return f"({self.user}, {self.like_object})"
+
+    class Meta:
+        db_table = 'like'
+        unique_together = ['user', 'content_type_id', 'object_id']
+
+
+# Review와 Comment 모델의 ContentType ID를 가져오는 예시
+# 13이 review모델 14가 comment 모델
+review_content_type_id = ContentType.objects.get_for_model(Review).id
+comment_content_type_id = ContentType.objects.get_for_model(Comment).id
+
+print(f"Review 모델의 ContentType ID: {review_content_type_id}")
+print(f"Comment 모델의 ContentType ID: {comment_content_type_id}")
