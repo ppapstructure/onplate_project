@@ -19,7 +19,7 @@ class User(AbstractUser):
     intro = models.CharField(max_length=60, blank=True)
 
     class Meta:
-        db_table = 'comment'
+        db_table = 'user'
 
     def __str__(self):
         return self.email
@@ -82,7 +82,7 @@ class Comment(models.Model):
         return self.content[:30]
         
     class Meta:
-        db_table = 'user'
+        db_table = 'comment'
 
 class Like(models.Model):
     dt_created = models.DateTimeField(auto_now_add=True)
@@ -101,8 +101,8 @@ class Like(models.Model):
 
 # Review와 Comment 모델의 ContentType ID를 가져오는 예시
 # 13이 review모델 14가 comment 모델
-review_content_type_id = ContentType.objects.get_for_model(Review).id
-comment_content_type_id = ContentType.objects.get_for_model(Comment).id
-
-print(f"Review 모델의 ContentType ID: {review_content_type_id}")
-print(f"Comment 모델의 ContentType ID: {comment_content_type_id}")
+# review_content_type_id = ContentType.objects.get_for_model(Review).id
+# comment_content_type_id = ContentType.objects.get_for_model(Comment).id
+#
+# print(f"Review 모델의 ContentType ID: {review_content_type_id}")
+# print(f"Comment 모델의 ContentType ID: {comment_content_type_id}")

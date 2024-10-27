@@ -15,10 +15,8 @@ from oneplate.views import (
     UserProfileUpdateView,
     LikeViewSet,
     UserLikedReviewsView,
+    GenerateRecipeAPIView,
 )
-
-router = DefaultRouter()
-router.register(r'likes', LikeViewSet, basename='like')
 
 urlpatterns = [
     path('', IndexView.as_view(), name="index"),
@@ -54,5 +52,9 @@ urlpatterns = [
     path('edit-profile/', UserProfileUpdateView.as_view(), name='profile-update'),
 
     # like
-    path('', include(router.urls)),
+    path('likes/', LikeViewSet.as_view({'get': 'list', 'post': 'create'}), name='like-list-create'),
+    path('likes/<int:id>/', LikeViewSet.as_view({'delete': 'destroy'}), name='like-delete'),
+
+    # generate-recipe
+    path('generate-recipe/', GenerateRecipeAPIView, name='generate-recipe'),
 ]

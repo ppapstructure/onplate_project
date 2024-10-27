@@ -11,9 +11,9 @@ class UserSerializer(serializers.ModelSerializer):
             'profile_pic': {'required': False},  # readOnly 대신 required 설정으로 처리
         }
 
-    def to_representation(self, instance):
-        print("Custom UserSerializer is being used!")  # 디버그 메시지
-        return super().to_representation(instance)
+    # def to_representation(self, instance):
+    #     print("Custom UserSerializer is being used!")  # 디버그 메시지
+    #     return super().to_representation(instance)
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)  # 작성자 정보
@@ -60,17 +60,8 @@ class LikeSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'content_type_id', 'object_id', 'dt_created']
 
 
-
-# class LikeSerializer(serializers.ModelSerializer):
-#     content_type = serializers.CharField(write_only=True)  # 'review' or 'comment'
-#     object_id = serializers.IntegerField(write_only=True)
-#
-#     class Meta:
-#         model = Like
-#         fields = ['id', 'user', 'content_type_id', 'object_id']
-#         read_only_fields = ['id', 'user']
-#
-#     def validate_content_type(self, value):
-#         if value not in ['review', 'comment']:
-#             raise serializers.ValidationError("content_type must be either 'review' or 'comment'")
-#         return value
+class GenerateRecipeSerializer(serializers.Serializer):
+    ingredients = serializers.ListField(
+        child=serializers.CharField(),  # 문자열 타입으로 구성된 리스트
+        help_text="레시피를 위한 재료 리스트를 입력하세요.",
+    )

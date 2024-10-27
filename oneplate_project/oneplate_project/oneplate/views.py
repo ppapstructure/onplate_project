@@ -16,9 +16,19 @@ from rest_framework.permissions import IsAuthenticated,IsAuthenticatedOrReadOnly
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
 from oneplate.models import User,Review,Comment,Like
-from oneplate.serializers import UserSerializer, ReviewSerializer, ReviewListSerializer,CommentSerializer, LikeSerializer
+from oneplate.serializers import (
+    UserSerializer,
+    ReviewSerializer,
+    ReviewListSerializer,
+    CommentSerializer,
+    LikeSerializer,
+    GenerateRecipeSerializer)
 from rest_framework.pagination import PageNumberPagination
-
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from deep_translator import GoogleTranslator
+import requests
+import openai
 '''
 나중에 기본적인 CRUD 작업들은 viewset을 상속받아서 리팩토링해보기
 '''
@@ -28,7 +38,11 @@ class ReviewPageNumberPagination(PageNumberPagination):
 
 class IndexView(APIView):
     def get(self, request):
-        return Response({"message" : "This is the index page"})
+        # 최신 리뷰 4개 가져오기
+        latest_reviews = Review.objects.all().order_by('-dt_created')[:4]
+        serializer = ReviewListSerializer(latest_reviews, many=True)
+        # JSON 응답으로 최신 리뷰 목록 반환
+        return Response({"reviews": serializer.data})
 
 '''
 Review
@@ -216,28 +230,15 @@ class LikeViewSet(viewsets.ModelViewSet):
 
         # 이미 좋아요가 눌려있는지 확인
         if Like.objects.filter(user=user, content_type_id=model_type, object_id=object_id).exists():
-            return Response({'deail': '이미 좋아요를 눌렀습니다.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': '이미 좋아요를 눌렀습니다.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # 좋아요 추가
         like = Like.objects.create(user=user, content_type_id=model_type, object_id=object_id)
-
-        # 만약 댓글에 대한 좋아요라면, 해당 댓글이 어느 리뷰에 속한 댓글인지 반환
-        '''
-        if model_type.model == 'comment':
-            comment = Comment.objects.get(comment_id=object_id)
-            review_id = comment.review.review_id  # 댓글이 달린 리뷰의 ID 가져오기
-
-            return Response({
-                'like': LikeSerializer(like).data,
-                'message': f'댓글 {object_id}에 좋아요를 추가했습니다.',
-                'review_id': review_id  # 댓글이 속한 리뷰의 ID 정보 추가
-            }, status=status.HTTP_201_CREATED)
-        '''
         return Response(LikeSerializer(like).data, status=status.HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
         user = request.user
-        like_id = kwargs.get('pk')  # URL에서 전달된 좋아요 객체의 ID
+        like_id = kwargs.get('id')  # URL에서 전달된 좋아요 객체의 ID
 
         # Like 객체를 조회하여 삭제할 대상 찾기
         try:
@@ -268,61 +269,75 @@ class UserLikedReviewsView(ListAPIView):
         # 해당 object_id에 해당하는 리뷰를 가져옴
         return Review.objects.filter(review_id__in=liked_review_ids)
 
+# Generate-recipe
+import base64
+from django.conf import settings
+from rest_framework.decorators import api_view
+# OpenAI API 키 설정
+openai.api_key = settings.OPENAI_API_KEY
+@swagger_auto_schema(
+    method='post',
+    request_body=GenerateRecipeSerializer,
+    responses={
+        200: openapi.Response("Recipe generated successfully"),
+        400: openapi.Response("Bad request"),
+    },
+)
 
+@api_view(['POST'])
+def GenerateRecipeAPIView(request):
+    serializer = GenerateRecipeSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    ingredients = serializer.validated_data.get('ingredients', [])
+    if not ingredients:
+        return Response({"error": "재료가 제공되지 않았습니다."}, status=400)
 
-# Like의 경우
-# 나중에 객체로 반환받는걸로 리팩토링해야겠다
+    # GPT로 레시피 생성
+    system_prompt = """
+    Generate a creative recipe including a catchy title, based on the ingredients provided by the user. 
+    Ensure the recipe is practical and the title reflects the dish's essence. 
+    The recipe should begin with 'Title: ' followed by the recipe title
+    """
+    recipe_prompt = "Ingredients: " + ", ".join(ingredients)
 
-# class LikeViewSet(viewsets.ModelViewSet):
-#     queryset = Like.objects.all()
-#     serializer_class = LikeSerializer
-#     permission_classes = [IsAuthenticated]
-#     http_method_names = ['post', 'delete', 'get']
-#
-#     def create(self, request, *args, **kwargs):
-#         user = request.user
-#         content_type = request.data.get('content_type_id')
-#         object_id = request.data.get('object_id')
-#
-#         # ContentType을 문자열로 받아 처리
-#         if content_type not in ['review', 'comment']:
-#             return Response({'detail': '잘못된 content_type입니다.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # ContentType 객체 가져오기
-#         model_type = ContentType.objects.get(model=content_type)
-#
-#         # 좋아요 대상 객체 가져오기
-#         try:
-#             if content_type == 'review':
-#                 like_object = Review.objects.get(review_id=object_id)
-#             elif content_type == 'comment':
-#                 like_object = Comment.objects.get(comment_id=object_id)
-#         except (Review.DoesNotExist, Comment.DoesNotExist):
-#             return Response({'detail': f'해당 {content_type}을(를) 찾을 수 없습니다.'}, status=status.HTTP_404_NOT_FOUND)
-#
-#         # 이미 좋아요가 눌려있는지 확인
-#         if Like.objects.filter(user=user, content_type=model_type, object_id=object_id).exists():
-#             return Response({'detail': '이미 좋아요를 눌렀습니다.'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         # 좋아요 추가
-#         like = Like.objects.create(user=user, content_type=model_type, object_id=object_id)
-#
-#         response_data = LikeSerializer(like).data
-#         if content_type == 'comment':
-#             response_data['review_id'] = like_object.review.review_id
-#
-#         return Response(response_data, status=status.HTTP_201_CREATED)
-#
-#     def destroy(self, request, *args, **kwargs):
-#         user = request.user
-#         like_id = kwargs.get('pk')
-#
-#         try:
-#             like = Like.objects.get(id=like_id, user=user)
-#         except Like.DoesNotExist:
-#             return Response({'detail': '좋아요가 없습니다.'}, status=status.HTTP_404_NOT_FOUND)
-#
-#         like.delete()
-#         return Response(status=status.HTTP_204_NO_CONTENT)
-#
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": recipe_prompt},
+        ]
+    )
+
+    recipe_text = response.choices[0].message["content"].strip()
+    recipe_title = recipe_text.split('\n', 1)[0].strip()
+
+    # DALL-E로 이미지 생성
+    def create_visualization_prompt(recipe_title):
+        clean_title = recipe_title.replace("Title: ", "")
+        prompt = (f"'{clean_title}'라는 이름의 요리의 맛있고 현실감 있는 이미지를 만들어 주세요. "
+                  "스튜디오 조명, 프로페셔널한 음식 사진 촬영 스타일로.")
+        return prompt
+
+    image_response = openai.Image.create(
+        prompt=create_visualization_prompt(recipe_title),
+        size="1024x1024",
+    )
+    image_url = image_response["data"][0]["url"]
+
+    # 레시피 한글 번역
+    translator = GoogleTranslator(source='auto', target='ko')
+    translated_recipe = translator.translate(recipe_text)
+
+    response = requests.get(image_url)
+    base64EncodedImage = ''
+    if response.status_code == 200:
+        base64EncodedImage = ('data:' + response.headers["Content-Type"] + ';' +
+                              "base64," + str(base64.b64encode(response.content).decode("utf-8")))
+
+    return Response({
+        "translated_recipe": translated_recipe,
+        "image_url": image_url,
+        'img_encoded': base64EncodedImage
+    })
